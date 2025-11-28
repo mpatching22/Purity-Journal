@@ -1,0 +1,695 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Our Vintage Purity Journal</title>
+    <style>
+        /* ---------- VINTAGE CHRISTIAN THEME ---------- */
+        body {
+            font-family: "Georgia", "Times New Roman", serif;
+            background-color: #f6f1e1; /* parchment */
+            color: #3f3020;
+            padding: 20px;
+            margin: 0 auto;
+            max-width: 960px;
+            line-height: 1.6;
+        }
+
+        .page-frame {
+            border: 2px solid #c1a775;
+            padding: 25px;
+            border-radius: 10px;
+            background: radial-gradient(circle at top left, #fdf8e9 0, #f6f1e1 40%, #f0e6d4 100%);
+            box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+        }
+
+        .journal-header {
+            text-align: center;
+            border-bottom: 2px solid #c1a775;
+            padding-bottom: 10px;
+            margin-bottom: 25px;
+            position: relative;
+        }
+
+        .journal-header h1 {
+            font-family: "Palatino Linotype", "Book Antiqua", Palatino, serif;
+            font-size: 2.4rem;
+            margin: 0;
+            letter-spacing: 1px;
+        }
+
+        .journal-header small {
+            display: block;
+            margin-top: 5px;
+            font-style: italic;
+            color: #7a6442;
+        }
+
+        .journal-header::before,
+        .journal-header::after {
+            content: "✝";
+            position: absolute;
+            top: 50%;
+            transform: translateY(-50%);
+            font-size: 1.2rem;
+            color: #c1a775;
+        }
+
+        .journal-header::before { left: 5px; }
+        .journal-header::after { right: 5px; }
+
+        /* ---------- SECTIONS ---------- */
+
+        .section {
+            margin-bottom: 30px;
+            padding: 18px 20px;
+            border-radius: 8px;
+            background-color: rgba(255,255,255,0.8);
+            border: 1px solid #d3c2a2;
+        }
+
+        .section h2 {
+            margin-top: 0;
+            font-size: 1.4rem;
+            color: #6b4a2b;
+            border-bottom: 1px solid #d3c2a2;
+            padding-bottom: 6px;
+            margin-bottom: 12px;
+        }
+
+        .section p.helper {
+            font-size: 0.9rem;
+            color: #7f6b54;
+            margin-top: 0;
+            margin-bottom: 12px;
+        }
+
+        /* ---------- FORM ---------- */
+
+        label {
+            display: block;
+            margin-top: 10px;
+            font-weight: bold;
+            color: #5b4125;
+            font-size: 0.95rem;
+        }
+
+        .hint {
+            font-weight: normal;
+            font-size: 0.85rem;
+            color: #8a745c;
+        }
+
+        input[type="date"],
+        select,
+        textarea {
+            width: 100%;
+            padding: 8px 10px;
+            margin-top: 4px;
+            border-radius: 4px;
+            border: 1px solid #cbb597;
+            background-color: #fbf7ee;
+            box-sizing: border-box;
+            font-family: inherit;
+            font-size: 0.95rem;
+        }
+
+        textarea {
+            resize: vertical;
+            min-height: 60px;
+        }
+
+        .form-row {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 12px;
+        }
+
+        .form-row > div {
+            flex: 1 1 220px;
+        }
+
+        button {
+            background-color: #7b5b34;
+            color: #fff;
+            padding: 10px 16px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            margin-top: 16px;
+            font-size: 0.95rem;
+            letter-spacing: 0.5px;
+        }
+
+        button:hover {
+            background-color: #65472a;
+        }
+
+        .btn-secondary {
+            background-color: #446c4f;
+        }
+
+        .btn-secondary:hover {
+            background-color: #355540;
+        }
+
+        .session-list {
+            margin-top: 10px;
+            padding-left: 18px;
+            font-size: 0.9rem;
+        }
+
+        .session-list li {
+            margin-bottom: 4px;
+        }
+
+        /* ---------- LOG ENTRIES ---------- */
+
+        #log-entries {
+            margin-top: 10px;
+        }
+
+        .week-entry {
+            border: 1px solid #d3c2a2;
+            border-radius: 8px;
+            padding: 18px;
+            margin-bottom: 20px;
+            background-color: #fdf8ee;
+            box-shadow: 0 2px 6px rgba(0,0,0,0.06);
+        }
+
+        .week-entry h3 {
+            margin: 0 0 8px;
+            font-size: 1.2rem;
+            color: #6b4a2b;
+        }
+
+        .week-entry small {
+            color: #8d7658;
+            font-style: italic;
+        }
+
+        .entry-table-wrapper {
+            overflow-x: auto;
+            margin-top: 10px;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 0.9rem;
+        }
+
+        th, td {
+            padding: 7px 8px;
+            border: 1px solid #e1d3bb;
+            text-align: left;
+        }
+
+        th {
+            background-color: #f3e6cf;
+            color: #5b4125;
+        }
+
+        /* Color coding by affection level (rows) */
+        .row-A0 { background-color: #f9f5e7; }
+        .row-A1 { background-color: #e8f4e3; }
+        .row-A2 { background-color: #fff2cc; }
+        .row-A3 { background-color: #f9d7d7; }
+
+        .summary-box {
+            margin-top: 12px;
+            padding: 10px 12px;
+            border-radius: 6px;
+            border: 1px dashed #c1a775;
+            background-color: #fcf7eb;
+            font-size: 0.9rem;
+        }
+
+        .summary-box strong {
+            color: #5b4125;
+        }
+
+        .discussion-reminder {
+            margin-top: 12px;
+            padding-top: 10px;
+            border-top: 1px solid #d3c2a2;
+            font-size: 0.9rem;
+        }
+
+        .discussion-reminder ol {
+            padding-left: 18px;
+        }
+
+        .discussion-reminder li {
+            margin-bottom: 4px;
+        }
+
+        .scripture {
+            font-style: italic;
+            font-size: 0.85rem;
+            color: #8a745c;
+            margin-top: 6px;
+        }
+
+        @media (max-width: 640px) {
+            .page-frame { padding: 15px; }
+        }
+    </style>
+</head>
+<body>
+<div class="page-frame">
+    <header class="journal-header">
+        <h1>Our Vintage Purity Journal</h1>
+        <small>“For this is the will of God, your sanctification…” (1 Thess 4:3)</small>
+    </header>
+
+    <!-- ---------- INPUT SECTION ---------- -->
+    <section class="section">
+        <h2>Weekly Check-in Entry</h2>
+        <p class="helper">
+            One of you logs moments from this past week. Think of this as a gentle, honest conversation with each other before God,
+            not a performance scorecard.
+        </p>
+
+        <form id="log-form" onsubmit="return false;">
+            <div class="form-row">
+                <div>
+                    <label for="date">Check-in Date</label>
+                    <input type="date" id="date" required>
+                </div>
+                <div>
+                    <label for="partner">Who is logging?</label>
+                    <select id="partner" required></select>
+                </div>
+            </div>
+
+            <div class="form-row">
+                <div>
+                    <label for="affection">Affection Level <span class="hint">(A-code)</span></label>
+                    <select id="affection" required>
+                        <option value="">-- Choose level --</option>
+                    </select>
+                </div>
+                <div>
+                    <label for="response">Response Level <span class="hint">(R-code)</span></label>
+                    <select id="response" required>
+                        <option value="">-- How did we handle it? --</option>
+                    </select>
+                </div>
+                <div>
+                    <label for="support">Support Action <span class="hint">(S-code, optional)</span></label>
+                    <select id="support">
+                        <option value="">-- Any accountability/support? --</option>
+                    </select>
+                </div>
+            </div>
+
+            <label for="context">Brief Context / Trigger</label>
+            <textarea id="context" placeholder='e.g. "Lying on the couch after a movie", "Walk home after dinner", "In the bedroom with the door closed".'></textarea>
+
+            <label for="helped">What helped us move towards purity today?</label>
+            <textarea id="helped" placeholder="e.g. One of us spoke up, we changed rooms, we prayed, we chose a safer activity, etc."></textarea>
+
+            <label for="serve">How can I serve you better next time?</label>
+            <textarea id="serve" placeholder="e.g. Leave earlier, choose lighter shows, keep my hands above the blanket, be the one to speak first, etc."></textarea>
+
+            <button type="button" onclick="addEntry()">✍️ Add Moment to This Week</button>
+            <button type="button" class="btn-secondary" onclick="finalizeLog()">✅ Finalise and Save This Week</button>
+        </form>
+
+        <h3 style="margin-top: 18px;">This Week’s Moments (not yet saved):</h3>
+        <ul id="session-entries" class="session-list"></ul>
+    </section>
+
+    <!-- ---------- SAVED ENTRIES ---------- -->
+    <section class="section" id="log-entries">
+        <h2>Saved Weekly Journals</h2>
+        <p class="helper">Once you finalise a week, it will appear here with a summary and reflection prompts.</p>
+    </section>
+</div>
+
+<script>
+    /* ---------- CODE DEFINITIONS ---------- */
+
+    const AFFECTION_CODES = {
+        "A0": {
+            label: "A0 – No Real Physical Pull",
+            desc: "Side hugs / brief touch only. No real sense of physical temptation.",
+            rowClass: "row-A0"
+        },
+        "A1": {
+            label: "A1 – Healthy Affection",
+            desc: "Hand holding, brief hugs, short kisses. Felt safe and honouring.",
+            rowClass: "row-A1"
+        },
+        "A2": {
+            label: "A2 – Escalating Affection",
+            desc: "Long kissing, lying down together, cuddling horizontally. Temptation noticeable.",
+            rowClass: "row-A2"
+        },
+        "A3": {
+            label: "A3 – Boundary Push",
+            desc: "Grinding, touching under clothes, or anything beyond agreed boundaries.",
+            rowClass: "row-A3"
+        }
+    };
+
+    const RESPONSE_CODES = {
+        "R3": {
+            label: "R3 – Proactive Success",
+            desc: "We made wise choices before temptation really started (location, time, activity)."
+        },
+        "R2": {
+            label: "R2 – Preventative Redirect",
+            desc: "We noticed things rising and changed activity/location calmly."
+        },
+        "R1": {
+            label: "R1 – Reactive Stop",
+            desc: "We stopped after crossing into the yellow/red zone. Still a win, but later than ideal."
+        }
+    };
+
+    const SUPPORT_CODES = {
+        "S1": {
+            label: "S1 – Pause Card Used",
+            desc: "One of us kindly said, “Pause” or called out the moment."
+        },
+        "S2": {
+            label: "S2 – Honest Share",
+            desc: "Someone confessed temptation or struggle openly."
+        },
+        "S3": {
+            label: "S3 – Thanked & Encouraged",
+            desc: "We expressed gratitude for the other person’s self-control."
+        },
+        "S4": {
+            label: "S4 – Boundary Reinforced",
+            desc: "We agreed on a new or clearer boundary for next time."
+        },
+        "S5": {
+            label: "S5 – Service Response",
+            desc: "One of us responded with an act of service after a slip or close call."
+        }
+    };
+
+    let sessionEntries = [];
+
+    /* ---------- INITIALISATION ---------- */
+
+    function setupPartnerNames() {
+        let p1 = localStorage.getItem("partner1_name") || "Micah";
+        let p2 = localStorage.getItem("partner2_name") || "Reegan";
+
+        if (!localStorage.getItem("partner1_name")) {
+            if (confirm("Is this your first time using the journal? You can set your names now.")) {
+                const enteredP1 = prompt("Enter the name for Partner 1:", p1) || p1;
+                const enteredP2 = prompt("Enter the name for Partner 2:", p2) || p2;
+                p1 = enteredP1.trim() || p1;
+                p2 = enteredP2.trim() || p2;
+                localStorage.setItem("partner1_name", p1);
+                localStorage.setItem("partner2_name", p2);
+            }
+        }
+
+        const select = document.getElementById("partner");
+        select.innerHTML = "";
+        const opt1 = document.createElement("option");
+        opt1.value = p1;
+        opt1.textContent = p1;
+        const opt2 = document.createElement("option");
+        opt2.value = p2;
+        opt2.textContent = p2;
+        select.appendChild(opt1);
+        select.appendChild(opt2);
+    }
+
+    function populateCodeSelects() {
+        const affectionSelect = document.getElementById("affection");
+        const responseSelect = document.getElementById("response");
+        const supportSelect = document.getElementById("support");
+
+        // Affection
+        for (const code in AFFECTION_CODES) {
+            const opt = document.createElement("option");
+            opt.value = code;
+            opt.textContent = `${code} – ${AFFECTION_CODES[code].desc}`;
+            affectionSelect.appendChild(opt);
+        }
+
+        // Response
+        for (const code in RESPONSE_CODES) {
+            const opt = document.createElement("option");
+            opt.value = code;
+            opt.textContent = `${code} – ${RESPONSE_CODES[code].desc}`;
+            responseSelect.appendChild(opt);
+        }
+
+        // Support (optional)
+        for (const code in SUPPORT_CODES) {
+            const opt = document.createElement("option");
+            opt.value = code;
+            opt.textContent = `${code} – ${SUPPORT_CODES[code].desc}`;
+            supportSelect.appendChild(opt);
+        }
+    }
+
+    /* ---------- SESSION ENTRY HANDLING ---------- */
+
+    function addEntry() {
+        const date = document.getElementById("date").value;
+        const partner = document.getElementById("partner").value;
+        const affection = document.getElementById("affection").value;
+        const response = document.getElementById("response").value;
+        const support = document.getElementById("support").value;
+        const context = document.getElementById("context").value.trim();
+        const helped = document.getElementById("helped").value.trim();
+        const serve = document.getElementById("serve").value.trim();
+
+        if (!date || !partner || !affection || !response) {
+            alert("Please choose Date, Partner, Affection Level, and Response Level at minimum.");
+            return;
+        }
+
+        const entry = {
+            date,
+            partner,
+            affection,
+            response,
+            support: support || null,
+            context,
+            helped,
+            serve
+        };
+
+        sessionEntries.push(entry);
+        renderSessionEntries();
+
+        // clear most fields, keep date & partner
+        document.getElementById("affection").value = "";
+        document.getElementById("response").value = "";
+        document.getElementById("support").value = "";
+        document.getElementById("context").value = "";
+        document.getElementById("helped").value = "";
+        document.getElementById("serve").value = "";
+    }
+
+    function renderSessionEntries() {
+        const list = document.getElementById("session-entries");
+        list.innerHTML = "";
+
+        if (sessionEntries.length === 0) {
+            const li = document.createElement("li");
+            li.textContent = "No moments added yet this week.";
+            li.style.color = "#8a745c";
+            list.appendChild(li);
+            return;
+        }
+
+        sessionEntries.forEach((entry, index) => {
+            const li = document.createElement("li");
+            const affectionLabel = AFFECTION_CODES[entry.affection].label;
+            const responseLabel = RESPONSE_CODES[entry.response].label;
+            const supportLabel = entry.support ? SUPPORT_CODES[entry.support].label : "None";
+            const context = entry.context || "(no extra context)";
+
+            li.innerHTML =
+                `<strong>${entry.partner}</strong> – ` +
+                `${entry.affection} / ${entry.response}` +
+                (entry.support ? ` / ${entry.support}` : "") +
+                ` &nbsp;– <em>${context}</em>`;
+            list.appendChild(li);
+        });
+    }
+
+    /* ---------- FINALISE WEEK & SAVE ---------- */
+
+    function finalizeLog() {
+        if (sessionEntries.length === 0) {
+            alert("Add at least one moment before finalising this week.");
+            return;
+        }
+
+        const firstDate = sessionEntries[0].date;
+        const formattedDate = new Date(firstDate).toLocaleDateString("en-AU", {
+            year: "numeric", month: "long", day: "numeric"
+        });
+
+        const newEntryHTML = generateWeekHTML(formattedDate, sessionEntries);
+
+        let savedLog = JSON.parse(localStorage.getItem("purityJournal")) || [];
+        savedLog.unshift(newEntryHTML);
+        localStorage.setItem("purityJournal", JSON.stringify(savedLog));
+
+        sessionEntries = [];
+        renderSessionEntries();
+        loadAndRenderLog();
+
+        alert("Week saved. Now use the reflection prompts together and pray.");
+    }
+
+    function generateWeekHTML(formattedDate, entries) {
+        let rowsHTML = "";
+        const affectionCounts = {};
+        const responseCounts = {};
+        const supportCounts = {};
+        const partners = new Set();
+
+        entries.forEach(entry => {
+            partners.add(entry.partner);
+            affectionCounts[entry.affection] = (affectionCounts[entry.affection] || 0) + 1;
+            responseCounts[entry.response] = (responseCounts[entry.response] || 0) + 1;
+            if (entry.support) {
+                supportCounts[entry.support] = (supportCounts[entry.support] || 0) + 1;
+            }
+
+            const affInfo = AFFECTION_CODES[entry.affection];
+            const rowClass = affInfo.rowClass;
+
+            const responseText = RESPONSE_CODES[entry.response].label;
+            const supportText = entry.support ? SUPPORT_CODES[entry.support].label : "—";
+
+            const context = entry.context || "—";
+            const helped = entry.helped || "—";
+            const serve = entry.serve || "—";
+
+            rowsHTML += `
+                <tr class="${rowClass}">
+                    <td>${entry.partner}</td>
+                    <td>${entry.affection}</td>
+                    <td>${entry.response}</td>
+                    <td>${entry.support || "—"}</td>
+                    <td>${context}</td>
+                    <td>${helped}</td>
+                    <td>${serve}</td>
+                </tr>
+            `;
+        });
+
+        function mostFrequent(mapObj) {
+            let bestCode = null;
+            let bestCount = 0;
+            for (const code in mapObj) {
+                if (mapObj[code] > bestCount) {
+                    bestCount = mapObj[code];
+                    bestCode = code;
+                }
+            }
+            return bestCode ? { code: bestCode, count: bestCount } : null;
+        }
+
+        const topAff = mostFrequent(affectionCounts);
+        const topResp = mostFrequent(responseCounts);
+        const topSupp = mostFrequent(supportCounts);
+
+        const affSummary = topAff
+            ? `${topAff.code} (${AFFECTION_CODES[topAff.code].desc}) – ${topAff.count} time(s)`
+            : "No affection logged.";
+        const respSummary = topResp
+            ? `${topResp.code} (${RESPONSE_CODES[topResp.code].label}) – ${topResp.count} time(s)`
+            : "No responses logged.";
+        const suppSummary = topSupp
+            ? `${topSupp.code} (${SUPPORT_CODES[topSupp.code].label}) – ${topSupp.count} time(s)`
+            : "No specific support actions logged.";
+
+        const partnersList = Array.from(partners).join(" & ");
+
+        return `
+            <article class="week-entry">
+                <h3>🧭 Weekly Journal – ${formattedDate}</h3>
+                <small>Partners: ${partnersList}</small>
+
+                <div class="entry-table-wrapper">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>Partner</th>
+                                <th>Affection (A)</th>
+                                <th>Response (R)</th>
+                                <th>Support (S)</th>
+                                <th>Context / Trigger</th>
+                                <th>What Helped?</th>
+                                <th>How Can I Serve?</th>
+                            </tr>
+                        </thead>
+                        <tbody>${rowsHTML}</tbody>
+                    </table>
+                </div>
+
+                <div class="summary-box">
+                    <strong>Pattern This Week:</strong><br>
+                    🌿 Most common affection level: ${affSummary}<br>
+                    🛡️ Typical response: ${respSummary}<br>
+                    🤝 Support actions: ${suppSummary}
+                    <div class="scripture">
+                        “Let us consider how to stir up one another to love and good works.” (Hebrews 10:24)
+                    </div>
+                </div>
+
+                <div class="discussion-reminder">
+                    <strong>Reflection Prompts for You Two:</strong>
+                    <ol>
+                        <li>Where do we want to thank God for growth this week?</li>
+                        <li>Where did we feel the strongest pull towards temptation?</li>
+                        <li>Is there a specific boundary we should tighten before next week?</li>
+                        <li>How can I better serve and protect your heart and body?</li>
+                        <li>Pray together: ask for help, thank Him for grace, and commit the next week to Him.</li>
+                    </ol>
+                </div>
+            </article>
+        `;
+    }
+
+    /* ---------- LOAD SAVED LOG ---------- */
+
+    function loadAndRenderLog() {
+        const container = document.getElementById("log-entries");
+        let savedLog = JSON.parse(localStorage.getItem("purityJournal")) || [];
+
+        if (!savedLog.length) {
+            container.innerHTML = `
+                <h2>Saved Weekly Journals</h2>
+                <p class="helper">No saved weeks yet. Once you finalise a week, it will appear here.</p>
+            `;
+            return;
+        }
+
+        container.innerHTML = `<h2>Saved Weekly Journals</h2>` + savedLog.join("");
+    }
+
+    /* ---------- ON LOAD ---------- */
+
+    window.onload = function () {
+        setupPartnerNames();
+        populateCodeSelects();
+        loadAndRenderLog();
+
+        // Set date to today by default
+        const dateInput = document.getElementById("date");
+        dateInput.valueAsDate = new Date();
+        renderSessionEntries();
+    };
+</script>
+</body>
+</html>
