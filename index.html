@@ -1,11 +1,12 @@
-<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.38.4/dist/umd/supabase.js"></script>
 <script>
 
 // --- SUPABASE CLIENT ---
 const SUPABASE_URL = "https://dmzkhnwxxaejtexcrudm.supabase.co";
 const SUPABASE_ANON = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImRtemtobnd4eGFlanRleGNydWRtIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjQzNDI2NDQsImV4cCI6MjA3OTkxODY0NH0.F5KmBwOiEhr7vFQZwylBK29IW3PfPtpF_tdiIMPHkIE";
 
-const supabase = supabase.createClient(SUPABASE_URL, SUPABASE_ANON);
+// IMPORTANT FIX → use window.supabase and rename client to `supa`
+const supa = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON);
 
 
 // --- DATA LAYER (Supabase version) ---
@@ -13,7 +14,7 @@ const Data = {
 
     // Load all logs from cloud
     getLogs: async () => {
-        const { data, error } = await supabase
+        const { data, error } = await supa
             .from('journal_entries')
             .select('*')
             .order('entry_id', { ascending: false });
@@ -38,7 +39,7 @@ const Data = {
 
     // Save entry to Supabase
     addEntry: async (entry) => {
-        await supabase.from('journal_entries').insert({
+        await supa.from('journal_entries').insert({
             entry_id: entry.id,
             date: entry.date,
             partner: entry.partner,
@@ -55,7 +56,7 @@ const Data = {
     deleteEntry: async (id) => {
         if(!confirm("Delete this entry?")) return;
 
-        await supabase
+        await supa
             .from('journal_entries')
             .delete()
             .eq('entry_id', id);
@@ -84,7 +85,6 @@ const Data = {
                 const json = JSON.parse(e.target.result);
 
                 if(Array.isArray(json)) {
-                    // Upload all rows into Supabase
                     for (const entry of json) {
                         await Data.addEntry(entry);
                     }
@@ -100,14 +100,14 @@ const Data = {
 
 
 // --- HOOK SUPABASE REALTIME ---
-supabase
+supa
   .channel('journal-sync')
   .on(
     "postgres_changes",
     { event: "*", schema: "public", table: "journal_entries" },
     (payload) => {
         console.log("Realtime update:", payload);
-        App.renderFromCloud();  // refresh instantly
+        App.renderFromCloud();
     }
   )
   .subscribe();
