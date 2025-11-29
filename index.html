@@ -1,124 +1,508 @@
-<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.38.4/dist/umd/supabase.js"></script>
-<script>
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Covenant Journal V5</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        /* --- THEME VARIABLES (Vintage Christian Journal) --- */
+        :root {
+            --bg-parchment: #F2E8C9;
+            --bg-paper: #FFFDF5;
+            --ink-primary: #3E2723;
+            --ink-secondary: #5D4037;
+            --ink-faint: #8D6E63;
+            
+            /* Severity/Status Colors */
+            --c-green: #2E7D32; --bg-green: #E8F5E9;
+            --c-yellow: #F9A825; --bg-yellow: #FFFDE7;
+            --c-orange: #EF6C00; --bg-orange: #FFF3E0;
+            --c-red: #C62828; --bg-red: #FFEBEE;
+            --c-darkred: #580808; --bg-darkred: #E0C0C0;
+            --c-blue: #1565C0; --bg-blue: #E3F2FD;
 
-// --- SUPABASE CLIENT ---
-const SUPABASE_URL = "https://dmzkhnwxxaejtexcrudm.supabase.co";
-const SUPABASE_ANON = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImRtemtobnd4eGFlanRleGNydWRtIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjQzNDI2NDQsImV4cCI6MjA3OTkxODY0NH0.F5KmBwOiEhr7vFQZwylBK29IW3PfPtpF_tdiIMPHkIE";
-
-// IMPORTANT FIX → use window.supabase and rename client to `supa`
-const supa = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON);
-
-
-// --- DATA LAYER (Supabase version) ---
-const Data = {
-
-    // Load all logs from cloud
-    getLogs: async () => {
-        const { data, error } = await supa
-            .from('journal_entries')
-            .select('*')
-            .order('entry_id', { ascending: false });
-
-        if (error) {
-            console.error("Load error:", error);
-            return [];
+            --shadow-soft: 0 4px 12px rgba(62, 39, 35, 0.1);
+            --radius: 8px;
         }
 
-        return data.map(row => ({
-            id: row.entry_id,
-            date: row.date,
-            partner: row.partner,
-            affection: row.affection,
-            response: row.response,
-            trigger: row.trigger,
-            location: row.location,
-            support: row.support,
-            note: row.note
-        }));
-    },
+        body {
+            font-family: 'Georgia', 'Times New Roman', serif;
+            background-color: var(--bg-parchment);
+            color: var(--ink-primary);
+            margin: 0; padding: 20px;
+            line-height: 1.6;
+            background-image: url('https://www.transparenttextures.com/patterns/paper.png');
+        }
 
-    // Save entry to Supabase
-    addEntry: async (entry) => {
-        await supa.from('journal_entries').insert({
-            entry_id: entry.id,
-            date: entry.date,
-            partner: entry.partner,
-            affection: entry.affection,
-            response: entry.response,
-            trigger: entry.trigger,
-            location: entry.location,
-            support: entry.support,
-            note: entry.note
-        });
-    },
+        .container { max-width: 1100px; margin: 0 auto; }
 
-    // Delete entry
-    deleteEntry: async (id) => {
+        /* --- HEADER --- */
+        header { text-align: center; margin-bottom: 25px; border-bottom: 3px double var(--ink-secondary); padding-bottom: 20px; }
+        h1 { margin: 0; font-size: 2.2rem; color: var(--ink-primary); }
+
+        /* --- CONTROLS / FILTERS --- */
+        .controls-bar {
+            background: var(--ink-secondary); color: white;
+            padding: 15px; border-radius: var(--radius);
+            display: flex; flex-wrap: wrap; gap: 15px; align-items: center; justify-content: space-between;
+            margin-bottom: 25px; box-shadow: var(--shadow-soft);
+        }
+        .controls-group { display: flex; gap: 10px; align-items: center; }
+        select, input { padding: 8px; border-radius: 4px; border: none; font-family: inherit; }
+        .btn { background: #D7CCC8; border: none; padding: 8px 12px; cursor: pointer; border-radius: 4px; font-weight: bold; }
+        .btn:hover { background: #BCAAA4; }
+
+        /* --- DASHBOARD STATS (5 Cards) --- */
+        .dashboard-grid {
+            display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+            gap: 15px; margin-bottom: 30px;
+        }
+        .stat-card {
+            background: var(--bg-paper); padding: 15px;
+            border-radius: var(--radius); border: 1px solid #D7CCC8;
+            box-shadow: var(--shadow-soft); text-align: center;
+        }
+        .stat-val { font-size: 1.8rem; font-weight: bold; display: block; color: var(--ink-primary); }
+        .stat-label { font-size: 0.8rem; text-transform: uppercase; letter-spacing: 1px; color: var(--ink-faint); margin-top: 5px; }
+        
+        /* Specific Stat Colors */
+        .sc-green { color: var(--c-green); }
+        .sc-blue { color: var(--c-blue); }
+
+        /* --- ENCOURAGEMENT BOX --- */
+        #encouragement-box {
+            background: linear-gradient(to right, #E8F5E9, #FFF);
+            border-left: 5px solid var(--c-green);
+            padding: 15px; margin-bottom: 30px; border-radius: 4px;
+            display: flex; align-items: center; gap: 15px;
+        }
+        .leaf-icon { font-size: 1.5rem; }
+
+        /* --- CHARTS --- */
+        .charts-row { 
+            display: grid; 
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); /* Adjusted to fit 4 charts */
+            gap: 20px; 
+            margin-bottom: 40px; 
+        }
+        .chart-box { 
+            background: white; padding: 15px; 
+            border-radius: var(--radius); 
+            box-shadow: var(--shadow-soft); 
+            height: 300px; 
+            display: flex; /* Added flex to center canvas */
+            justify-content: center;
+            align-items: center;
+        }
+        .chart-box canvas { max-height: 100%; max-width: 100%; }
+
+        /* --- INPUT FORM --- */
+        .form-section {
+            background: var(--bg-paper); padding: 25px;
+            border-radius: var(--radius); border: 1px solid #D7CCC8;
+            box-shadow: var(--shadow-soft); margin-bottom: 40px;
+        }
+        .form-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
+        @media (max-width: 600px) { .form-grid { grid-template-columns: 1fr; } }
+        
+        label { display: block; font-weight: bold; margin-bottom: 5px; color: var(--ink-secondary); font-size: 0.9rem; margin-top: 15px; }
+        select, input[type="text"], textarea, input[type="date"] {
+            width: 100%; padding: 10px; border: 1px solid #BCAAA4; background: #FFF; box-sizing: border-box;
+        }
+        
+        .prompt-bubbles { margin-top: 5px; display: flex; flex-wrap: wrap; gap: 5px; }
+        .bubble { font-size: 0.8rem; background: #EFEBE9; padding: 4px 8px; border-radius: 12px; cursor: pointer; border: 1px solid #D7CCC8; }
+        .bubble:hover { background: #D7CCC8; }
+
+        /* --- LOGBOOK ENTRIES --- */
+        .week-header {
+            background: var(--ink-secondary); color: white;
+            padding: 10px 15px; border-radius: var(--radius) var(--radius) 0 0;
+            display: flex; justify-content: space-between; font-weight: bold; margin-top: 20px;
+        }
+        .week-summary {
+            background: #EFEBE9; padding: 15px; font-size: 0.9rem;
+            border: 1px solid #D7CCC8; border-top: none;
+            display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 10px;
+        }
+        .summary-block h4 { margin: 0 0 5px 0; font-size: 0.8rem; text-transform: uppercase; color: var(--ink-faint); }
+        
+        .log-entry {
+            background: white; padding: 15px;
+            border-bottom: 1px solid #E0E0E0; border-left: 1px solid #ccc; border-right: 1px solid #ccc;
+        }
+        .log-entry:last-child { border-radius: 0 0 var(--radius) var(--radius); border-bottom: 1px solid #ccc; }
+
+        /* Severity Borders */
+        .border-green { border-left: 6px solid var(--c-green) !important; }
+        .border-yellow { border-left: 6px solid var(--c-yellow) !important; }
+        .border-red { border-left: 6px solid var(--c-red) !important; }
+        .border-darkred { border-left: 6px solid var(--c-darkred) !important; }
+
+        .entry-meta { display: flex; justify-content: space-between; font-size: 0.85rem; color: #888; margin-bottom: 8px; }
+        .tags-row { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 10px; }
+        .tag { padding: 4px 8px; border-radius: 4px; font-size: 0.75rem; font-weight: bold; text-transform: uppercase; }
+
+        .hidden { display: none; }
+    </style>
+</head>
+<body>
+
+<div class="container">
+
+    <header>
+        <h1>🕊️ Covenant Journal V5</h1>
+        <div style="font-style:italic; margin-top:5px; color: var(--ink-faint);">Relationship. Honesty. Growth.</div>
+    </header>
+
+    <div class="controls-bar">
+        <div class="controls-group">
+            <label style="color:white; margin:0;">Timeframe:</label>
+            <select id="filterTime" onchange="App.render()">
+                <option value="thisWeek">This Week</option>
+                <option value="lastWeek">Last Week</option>
+                <option value="last30">Last 30 Days</option>
+                <option value="all">All Time</option>
+            </select>
+        </div>
+        <div class="controls-group">
+            <label style="color:white; margin:0;">Partner:</label>
+            <select id="filterPartner" onchange="App.render()">
+                <option value="All">Both</option>
+                <option value="Micah">Micah</option>
+                <option value="Reegan">Reegan</option>
+            </select>
+        </div>
+        <div class="controls-group">
+            <button class="btn" onclick="Data.exportJSON()">💾 Export</button>
+            <button class="btn" onclick="document.getElementById('importFile').click()">📂 Import</button>
+            <input type="file" id="importFile" style="display:none" onchange="Data.importJSON(this)">
+        </div>
+    </div>
+
+    <div class="dashboard-grid">
+        <div class="stat-card">
+            <span class="stat-val sc-green" id="stat-streak">0</span>
+            <span class="stat-label">Risk-Free Days (Streak)</span>
+        </div>
+        <div class="stat-card">
+            <span class="stat-val" id="stat-purity">--</span>
+            <span class="stat-label">Purity Score (Weighted)</span>
+        </div>
+        <div class="stat-card">
+            <span class="stat-val sc-blue" id="stat-response">--</span>
+            <span class="stat-label">Response Quality (Avg)</span>
+        </div>
+        <div class="stat-card">
+            <span class="stat-val" id="stat-support">0</span>
+            <span class="stat-label">Support Actions</span>
+        </div>
+        <div class="stat-card">
+            <span class="stat-val" id="stat-entries">0</span>
+            <span class="stat-label">Entries in Period</span>
+        </div>
+    </div>
+
+    <div id="encouragement-box">
+        <div class="leaf-icon">🌿</div>
+        <div>
+            <strong id="msg-title">Weekly Insight</strong>
+            <div id="msg-body" style="font-size:0.9rem; color:#444;">Loading insights...</div>
+        </div>
+    </div>
+
+    <div class="charts-row">
+        <div class="chart-box">
+            <canvas id="chartAffection"></canvas>
+        </div>
+        <div class="chart-box">
+            <canvas id="chartResponse"></canvas>
+        </div>
+        <div class="chart-box">
+            <canvas id="chartLocation"></canvas>
+        </div>
+        <div class="chart-box">
+            <canvas id="chartTrigger"></canvas>
+        </div>
+    </div>
+
+    <div class="form-section">
+        <h3 style="margin-top:0; border-bottom:1px solid #ccc; padding-bottom:10px;">New Journal Entry</h3>
+        
+        <div class="form-grid">
+            <div>
+                <label>Date & Partner</label>
+                <div style="display:flex; gap:10px;">
+                    <input type="date" id="inpDate">
+                    <select id="inpPartner">
+                        <option value="Micah">Micah</option>
+                        <option value="Reegan">Reegan</option>
+                    </select>
+                </div>
+
+                <label>❤️ Affection Level (Risk)</label>
+                <select id="inpAffection">
+                    <option value="">-- Select --</option>
+                    <option value="A0">A0 — No Physical Interaction (Safe)</option>
+                    <option value="A1">A1 — Healthy Affection (Hand holding, short kiss)</option>
+                    <option value="A2">A2 — Escalating (Long kissing, lying down)</option>
+                    <option value="A3">A3 — Boundary Push (Grinding, under clothes)</option>
+                    <option value="A4">A4 — Violation (Explicit activity)</option>
+                </select>
+
+                <label>🛑 Response Level (Grace)</label>
+                <select id="inpResponse">
+                    <option value="">-- Select --</option>
+                    <option value="R0">R0 — Peaceful & Safe (No temptation or tension)</option>
+                    <option value="R1">R1 — Early Awareness (Prevented early before escalation)</option>
+                    <option value="R2">R2 — Mutual Redirection (Stopped in the moment, pre-violation)</option>
+                    <option value="R3">R3 — Confessed Gracefully (Stopped post-violation, acknowledged immediately)</option>
+                    <option value="R4">R4 — Logbook Acknowledgment (Logbook is the first moment of honesty)</option>
+                    </select>
+            </div>
+
+            <div>
+                <label>📍 Context</label>
+                <div style="display:flex; gap:10px;">
+                    <select id="inpTrigger">
+                        <option value="None">No Specific Trigger</option>
+                        <option value="Late Night">Late Night</option>
+                        <option value="Emotional">Emotional Need</option>
+                        <option value="Stress">Stress / Comfort</option>
+                        <option value="Watching">Watching Media/Content</option>
+                        <option value="Drinking">Drinking/Intoxication</option>
+                    </select>
+                    <select id="inpLocation">
+                        <option value="None">Unknown / Neutral</option>
+                        <option value="Bedroom">Bedroom</option>
+                        <option value="Couch">Couch / Lying Down</option>
+                        <option value="Car">Car</option>
+                        <option value="Away">Away from Home</option>
+                        <option value="Kitchen">Kitchen/Communal</option>
+                    </select>
+                </div>
+
+                <label>🤝 Support Action</label>
+                <select id="inpSupport">
+                    <option value="None">None</option>
+                    <option value="S1">S1 — Pause Card Used</option>
+                    <option value="S2">S2 — Honest Share</option>
+                    <option value="S3">S3 — Thanked Partner</option>
+                    <option value="S4">S4 — Boundary Reinforced</option>
+                    <option value="S5">S5 — Service Response</option>
+                </select>
+
+                <label>📝 Reflection</label>
+                <div class="prompt-bubbles" id="promptBubbles"></div>
+                <textarea id="inpNote" rows="3"></textarea>
+            </div>
+        </div>
+
+        <button class="btn" style="background:var(--ink-secondary); color:white; width:100%; margin-top:20px; padding:12px;" onclick="App.saveEntry()">Save Entry</button>
+    </div>
+
+    <div id="log-container"></div>
+
+</div>
+
+<script>
+/**
+ * COVENANT JOURNAL V5
+ * Updates: Room/Context Stats, Reworded R2-R4
+ */
+
+// --- CONFIGURATION ---
+const CONFIG = {
+    key: 'covenant_journal_v4',
+    // Weighted Scoring System (User defined)
+    points: {
+        'A0': 5, 'A1': 5, 'A2': 2, 'A3': -3, 'A4': -7,
+        // R values are updated here: R0/R1 high, R4 low
+        'R0': 5, 'R1': 4, 'R2': 2, 'R3': 0, 'R4': -4 
+    },
+    styles: {
+        'A0': { bg:'#E8F5E9', c:'#2E7D32', border:'border-green' },
+        'A1': { bg:'#E8F5E9', c:'#2E7D32', border:'border-green' },
+        'A2': { bg:'#FFFDE7', c:'#F57F17', border:'border-yellow' },
+        'A3': { bg:'#FFEBEE', c:'#C62828', border:'border-red' },
+        'A4': { bg:'#E0C0C0', c:'#580808', border:'border-darkred' },
+        'R0': { bg:'#E3F2FD', c:'#1565C0' },
+        'R1': { bg:'#E8F5E9', c:'#2E7D32' },
+        'R2': { bg:'#FFF3E0', c:'#EF6C00' },
+        'R3': { bg:'#FFEBEE', c:'#C62828' },
+        'R4': { bg:'#3E2723', c:'#fff' }
+    },
+    prompts: ["What helped us?", "Who initiated stopping?", "God taught us:", "Trigger point:", "Plan for next time:"]
+};
+
+// --- DATA MANAGEMENT ---
+const Data = {
+    getLogs: () => JSON.parse(localStorage.getItem(CONFIG.key) || '[]'),
+    saveLogs: (logs) => localStorage.setItem(CONFIG.key, JSON.stringify(logs)),
+    
+    addEntry: (entry) => {
+        const logs = Data.getLogs();
+        logs.unshift(entry);
+        Data.saveLogs(logs);
+        App.init(); // Refresh all
+    },
+    
+    deleteEntry: (id) => {
         if(!confirm("Delete this entry?")) return;
-
-        await supa
-            .from('journal_entries')
-            .delete()
-            .eq('entry_id', id);
+        const logs = Data.getLogs().filter(e => e.id !== id);
+        Data.saveLogs(logs);
+        App.init();
     },
 
-    // Export still works (pulls from cloud)
-    exportJSON: async () => {
-        const logs = await Data.getLogs();
-        const data = JSON.stringify(logs, null, 2);
+    exportJSON: () => {
+        const data = JSON.stringify(Data.getLogs(), null, 2);
         const blob = new Blob([data], {type: 'application/json'});
         const url = URL.createObjectURL(blob);
         const a = document.createElement('a');
         a.href = url;
-        a.download = `covenant_journal_cloud_${new Date().toISOString().slice(0,10)}.json`;
+        a.download = `covenant_journal_${new Date().toISOString().slice(0,10)}.json`;
         a.click();
     },
 
-    // Import JSON → uploads into Supabase
-    importJSON: async (input) => {
+    importJSON: (input) => {
         const file = input.files[0];
         if(!file) return;
-
         const reader = new FileReader();
-        reader.onload = async (e) => {
+        reader.onload = (e) => {
             try {
                 const json = JSON.parse(e.target.result);
-
                 if(Array.isArray(json)) {
-                    for (const entry of json) {
-                        await Data.addEntry(entry);
-                    }
+                    Data.saveLogs(json);
                     alert("Import successful!");
+                    App.init();
                 }
-            } catch(err) {
-                alert("Error importing file.");
-            }
+            } catch(err) { alert("Error importing file."); }
         };
         reader.readAsText(file);
     }
 };
 
+// --- STATS ENGINE (Modular) ---
+const Stats = {
+    // 1. FILTERING
+    filterLogs: (logs, timeFilter, partnerFilter) => {
+        const now = new Date();
+        let limitDate = new Date('2000-01-01'); // Default All Time
 
-// --- HOOK SUPABASE REALTIME ---
-supa
-  .channel('journal-sync')
-  .on(
-    "postgres_changes",
-    { event: "*", schema: "public", table: "journal_entries" },
-    (payload) => {
-        console.log("Realtime update:", payload);
-        App.renderFromCloud();
+        if(timeFilter === 'thisWeek') {
+            // Monday of this week
+            const day = now.getDay(), diff = now.getDate() - day + (day == 0 ? -6:1);
+            limitDate = new Date(now.setDate(diff));
+            limitDate.setHours(0,0,0,0);
+        } else if (timeFilter === 'lastWeek') {
+            // Monday of last week
+            const day = now.getDay(), diff = now.getDate() - day + (day == 0 ? -6:1) - 7;
+            const lastMon = new Date(now.setDate(diff));
+            limitDate = lastMon;
+            limitDate.setHours(0,0,0,0);
+        } else if (timeFilter === 'last30') {
+            limitDate = new Date();
+            limitDate.setDate(limitDate.getDate() - 30);
+        }
+
+        return logs.filter(l => {
+            const lDate = new Date(l.date);
+            const matchesTime = lDate >= limitDate;
+            const matchesPartner = partnerFilter === 'All' || l.partner === partnerFilter;
+            return matchesTime && matchesPartner;
+        });
+    },
+
+    // 2. STREAK (Calendar Days)
+    getStreak: (logs) => {
+        const sorted = [...logs].sort((a,b) => new Date(b.date) - new Date(a.date));
+        const today = new Date();
+        today.setHours(0,0,0,0);
+        
+        let lastFailDate = null;
+        for(let l of sorted) {
+            if(l.affection === 'A3' || l.affection === 'A4') {
+                lastFailDate = new Date(l.date);
+                lastFailDate.setHours(0,0,0,0);
+                break;
+            }
+        }
+
+        if(!lastFailDate) {
+            if(logs.length === 0) return 0;
+            const firstDate = new Date(sorted[sorted.length-1].date);
+            const diffTime = Math.abs(today - firstDate);
+            return Math.ceil(diffTime / (1000 * 60 * 60 * 24)) + 1;
+        }
+
+        const diffTime = Math.abs(today - lastFailDate);
+        return Math.floor(diffTime / (1000 * 60 * 60 * 24));
+    },
+
+    // 3. WEIGHTED SCORE
+    getPurityScore: (logs) => {
+        if(!logs.length) return 0;
+        
+        let totalPoints = 0;
+        let maxPoints = 0;
+
+        logs.forEach(l => {
+            const pA = CONFIG.points[l.affection] || 0;
+            const pR = CONFIG.points[l.response] || 0;
+
+            const entryScore = pA + pR;
+            // Best possible per entry is 10 (A0/A1 + R0/R1)
+            totalPoints += Math.max(entryScore, 0); // Ensures score never goes below 0 for a single entry
+            maxPoints += 10;
+        });
+
+        if(totalPoints < 0) totalPoints = 0;
+        return Math.round((totalPoints / maxPoints) * 100);
+    },
+
+    // 4. RESPONSE QUALITY
+    getResponseAvg: (logs) => {
+        if(!logs.length) return 0;
+        let total = 0;
+        // R0(5), R1(4), R2(3), R3(2), R4(1) - for a simple 1-5 scale
+        const map = { 'R0':5, 'R1':4, 'R2':3, 'R3':2, 'R4':1 };
+        logs.forEach(l => total += (map[l.response] || 0));
+        return (total / logs.length).toFixed(1);
+    },
+
+    // 5. INSIGHT ENGINE
+    generateInsight: (logs, score) => {
+        if(!logs.length) return { title: "Welcome!", body: "Log your first entry to see insights." };
+        
+        const badResp = logs.filter(l => ['R3','R4'].includes(l.response)).length;
+        const goodResp = logs.filter(l => ['R1','R2'].includes(l.response)).length;
+        const supportCount = logs.filter(l => l.support !== 'None').length;
+
+        if(score > 85) return { title: "Excellent Discipline", body: "You are protecting your purity with consistency. Keep using Early Awareness!" };
+        if(goodResp > badResp) return { title: "Great Teamwork", body: `You proactively redirected ${goodResp} times. Your communication is your strength.` };
+        if(supportCount > 2) return { title: "Building Habits", body: "You are actively using support tools. This builds long-term resilience." };
+        if(badResp > 0) return { title: "Grace Covers You", body: "Honesty is the first step to healing. Discuss what triggered the hard moments." };
+        
+        return { title: "Stay Vigilant", body: "Keep tracking and praying together." };
     }
-  )
-  .subscribe();
+};
+
+// Helper for date input default
+function getSydneyToday() {
+    const nowSydney = new Date(new Date().toLocaleString("en-US", { timeZone: "Australia/Sydney" }));
+    const year = nowSydney.getFullYear();
+    const month = String(nowSydney.getMonth() + 1).padStart(2, '0');
+    const day = String(nowSydney.getDate()).padStart(2, '0');
+    return `${year}-${month}-${day}`;
+}
 
 
-// --- APP (MODIFIED TO LOAD FROM SUPABASE) ---
+// --- APP LOGIC ---
 const App = {
-
-    init: async () => {
+    init: () => {
         document.getElementById('inpDate').value = getSydneyToday();
-
+        
         const bubbles = document.getElementById('promptBubbles');
         bubbles.innerHTML = '';
         CONFIG.prompts.forEach(p => {
@@ -129,23 +513,15 @@ const App = {
             bubbles.appendChild(b);
         });
 
-        await App.renderFromCloud();
-    },
-
-    renderFromCloud: async () => {
-        window.__ALL_LOGS__ = await Data.getLogs();
         App.render();
     },
 
-    saveEntry: async () => {
+    saveEntry: () => {
         const ids = ['inpDate','inpPartner','inpAffection','inpResponse','inpTrigger','inpLocation','inpSupport','inpNote'];
         const v = {};
         ids.forEach(id => v[id] = document.getElementById(id).value);
 
-        if(!v.inpAffection || !v.inpResponse) {
-            alert("Please select Affection and Response.");
-            return;
-        }
+        if(!v.inpAffection || !v.inpResponse) { alert("Please select Affection and Response."); return; }
 
         const entry = {
             id: Date.now(),
@@ -159,20 +535,21 @@ const App = {
             note: v.inpNote
         };
 
-        await Data.addEntry(entry);
-
+        Data.addEntry(entry);
         document.getElementById('inpNote').value = '';
         document.getElementById('inpAffection').value = '';
         document.getElementById('inpResponse').value = '';
     },
 
     render: () => {
-        const allLogs = window.__ALL_LOGS__ || [];
+        const allLogs = Data.getLogs();
         const timeFilter = document.getElementById('filterTime').value;
         const partnerFilter = document.getElementById('filterPartner').value;
 
+        // 1. GET FILTERED DATA
         const logs = Stats.filterLogs(allLogs, timeFilter, partnerFilter);
 
+        // 2. UPDATE DASHBOARD
         const score = Stats.getPurityScore(logs);
         document.getElementById('stat-streak').innerText = Stats.getStreak(allLogs);
         document.getElementById('stat-purity').innerText = score;
@@ -180,15 +557,18 @@ const App = {
         document.getElementById('stat-support').innerText = logs.filter(l => l.support !== 'None').length;
         document.getElementById('stat-entries').innerText = logs.length;
 
+        // 3. ENCOURAGEMENT
         const insight = Stats.generateInsight(logs, score);
         document.getElementById('msg-title').innerText = insight.title;
         document.getElementById('msg-body').innerText = insight.body;
 
+        // 4. RENDER CHARTS
         App.renderCharts(logs);
 
+        // 5. RENDER LOGS (Grouped by Week)
         const container = document.getElementById('log-container');
         container.innerHTML = '';
-
+        
         if(logs.length === 0) {
             container.innerHTML = '<p style="text-align:center; color:#999">No entries found for this period.</p>';
             return;
@@ -205,11 +585,11 @@ const App = {
 
         Object.keys(weeks).sort().reverse().forEach(weekStart => {
             const wLogs = weeks[weekStart];
-
+            
             const countA3 = wLogs.filter(l => ['A3','A4'].includes(l.affection)).length;
             const countR1 = wLogs.filter(l => ['R1','R2'].includes(l.response)).length;
-            const bestMsg = countR1 > 0 ? `${countR1} Early Redirections` : "Keep striving";
-
+            const bestMsg = countR1 > 0 ? `${countR1} Proactive Redirections` : "Keep striving";
+            
             const group = document.createElement('div');
             group.innerHTML = `
                 <div class="week-header">
@@ -226,11 +606,11 @@ const App = {
                     </div>
                 </div>
             `;
-
+            
             wLogs.forEach(entry => {
                 const sA = CONFIG.styles[entry.affection] || CONFIG.styles['A0'];
                 const sR = CONFIG.styles[entry.response] || CONFIG.styles['R0'];
-
+                
                 const div = document.createElement('div');
                 div.className = `log-entry ${sA.border}`;
                 div.innerHTML = `
@@ -243,13 +623,114 @@ const App = {
                         <span class="tag" style="background:${sR.bg}; color:${sR.c}">${entry.response}</span>
                         ${entry.support !== 'None' ? `<span class="tag" style="background:#E3F2FD; color:#1565C0">${entry.support}</span>` : ''}
                     </div>
-                    ${entry.trigger !== 'None' ? `<div style="font-size:0.85rem; color:#666; margin-bottom:5px;">📍 ${entry.trigger} (${entry.location})</div>` : ''}
+                    <div style="font-size:0.85rem; color:#666; margin-bottom:5px;">📍 ${entry.trigger} (${entry.location})</div>
                     <div style="font-style:italic; color:#444;">"${entry.note}"</div>
                 `;
                 group.appendChild(div);
             });
-
             container.appendChild(group);
+        });
+    },
+
+    renderCharts: (logs) => {
+        // 1. Affection Risk Mix
+        const aggA = { 'Safe (A0/A1)':0, 'Escalating (A2)':0, 'High Risk (A3/A4)':0 };
+        logs.forEach(l => {
+            if(['A0','A1'].includes(l.affection)) aggA['Safe (A0/A1)']++;
+            else if(l.affection === 'A2') aggA['Escalating (A2)']++;
+            else aggA['High Risk (A3/A4)']++;
+        });
+
+        if(window.chartA instanceof Chart) window.chartA.destroy();
+        window.chartA = new Chart(document.getElementById('chartAffection'), {
+            type: 'bar',
+            data: {
+                labels: Object.keys(aggA),
+                datasets: [{
+                    label: 'Entries',
+                    data: Object.values(aggA),
+                    backgroundColor: ['#A5D6A7', '#FFF59D', '#EF9A9A']
+                }]
+            },
+            options: { plugins: { title: { display: true, text: 'Affection Risk Mix' } }, maintainAspectRatio: false }
+        });
+
+        // 2. Response Style Mix
+        const aggR = { 'Peaceful (R0)':0, 'Proactive (R1/R2)':0, 'Reactive/Confessed (R3/R4)':0 };
+        logs.forEach(l => {
+            if(l.response === 'R0') aggR['Peaceful (R0)']++;
+            else if(['R1','R2'].includes(l.response)) aggR['Proactive (R1/R2)']++;
+            else aggR['Reactive/Confessed (R3/R4)']++;
+        });
+
+        if(window.chartR instanceof Chart) window.chartR.destroy();
+        window.chartR = new Chart(document.getElementById('chartResponse'), {
+            type: 'doughnut',
+            data: {
+                labels: Object.keys(aggR),
+                datasets: [{
+                    data: Object.values(aggR),
+                    backgroundColor: ['#90CAF9', '#A5D6A7', '#EF9A9A']
+                }]
+            },
+            options: { plugins: { title: { display: true, text: 'Response Style' } }, maintainAspectRatio: false }
+        });
+        
+        // 3. Location Risk Distribution (NEW CHART)
+        App.renderLocationChart(logs);
+        
+        // 4. Trigger Risk Distribution (NEW CHART)
+        App.renderTriggerChart(logs);
+    },
+    
+    // NEW FUNCTION: Location Chart
+    renderLocationChart: (logs) => {
+        const aggL = {};
+        logs.forEach(l => {
+            const loc = l.location || 'Unknown / Neutral';
+            aggL[loc] = (aggL[loc] || 0) + 1;
+        });
+        
+        const dataKeys = Object.keys(aggL).sort();
+        const dataValues = dataKeys.map(key => aggL[key]);
+
+        if(window.chartL instanceof Chart) window.chartL.destroy();
+        window.chartL = new Chart(document.getElementById('chartLocation'), {
+            type: 'polarArea',
+            data: {
+                labels: dataKeys,
+                datasets: [{
+                    data: dataValues,
+                    backgroundColor: ['#42A5F5', '#FFCA28', '#D84315', '#66BB6A', '#9C27B0', '#795548']
+                }]
+            },
+            options: { plugins: { title: { display: true, text: 'Entries by Location' } }, maintainAspectRatio: false }
+        });
+    },
+    
+    // NEW FUNCTION: Trigger Chart
+    renderTriggerChart: (logs) => {
+        const aggT = {};
+        logs.forEach(l => {
+            const trigger = l.trigger || 'None';
+            aggT[trigger] = (aggT[trigger] || 0) + 1;
+        });
+
+        const dataKeys = Object.keys(aggT).sort();
+        const dataValues = dataKeys.map(key => aggT[key]);
+
+        if(window.chartT instanceof Chart) window.chartT.destroy();
+        window.chartT = new Chart(document.getElementById('chartTrigger'), {
+            type: 'bar',
+            data: {
+                labels: dataKeys,
+                datasets: [{
+                    label: 'Entry Count',
+                    data: dataValues,
+                    backgroundColor: '#B39DDB'
+                }]
+            },
+            options: { plugins: { title: { display: true, text: 'Entries by Trigger/Context' } }, maintainAspectRatio: false }
         });
     }
 };
@@ -257,3 +738,5 @@ const App = {
 window.onload = App.init;
 
 </script>
+</body>
+</html>
